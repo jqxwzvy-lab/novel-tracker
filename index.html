@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>书单记录本</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(160deg, #F0ECF8 0%, #F7EFF5 100%);
+    font-family: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+  }
+  #lock-screen {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 100vh; padding: 20px;
+  }
+  #lock-screen h1 { font-size: 24px; color: #2D2438; letter-spacing: 0.1em; margin-bottom: 8px; }
+  #lock-screen p { font-size: 13px; color: #9B88B0; margin-bottom: 32px; }
+  #lock-input {
+    border: 1px solid #DDD5F0; border-radius: 12px; padding: 12px 20px;
+    font-size: 18px; text-align: center; letter-spacing: 0.3em; color: #2D2438;
+    background: #FDFBFF; outline: none; width: 160px; margin-bottom: 16px; display: block;
+  }
+  #lock-btn {
+    background: #8B7EC8; color: #fff; border: none; border-radius: 24px;
+    padding: 10px 32px; font-size: 14px; letter-spacing: 0.1em; cursor: pointer; font-family: inherit;
+  }
+  #lock-err { color: #E8A0BF; font-size: 13px; margin-top: 12px; min-height: 18px; }
+
+  #app { display: none; padding-bottom: 60px; }
+  .header { text-align: center; padding: 36px 20px 20px; }
+  .header h1 { font-size: 26px; color: #2D2438; letter-spacing: 0.1em; font-weight: 700; }
+  .header p { font-size: 13px; color: #9B88B0; margin-top: 6px; letter-spacing: 0.08em; }
+
+  #add-btn {
+    display: block; margin: 0 auto 28px; background: #8B7EC8; color: #fff;
+    border: none; border-radius: 24px; padding: 10px 32px; font-size: 14px;
+    letter-spacing: 0.1em; cursor: pointer; font-family: inherit;
+  }
+  #form-wrap {
+    display: none; background: #FDFBFF; border: 1px solid #E2D8F0;
+    border-radius: 16px; padding: 24px 20px; margin: 0 16px 24px;
+    box-shadow: 0 2px 16px #8B7EC812;
+  }
+  .f-label {
+    font-size: 12px; color: #9B88B0; letter-spacing: 0.1em;
+    display: block; margin-bottom: 5px; margin-top: 14px;
+  }
+  .f-label:first-child { margin-top: 0; }
+  .f-input, .f-textarea {
+    width: 100%; border: 1px solid #DDD5F0; border-radius: 8px;
+    padding: 8px 12px; font-size: 14px; color: #2D2438;
+    background: #F8F4FD; outline: none; font-family: inherit;
+  }
+  .f-textarea { resize: vertical; min-height: 60px; }
+  .f-row { display: flex; gap: 12px; }
+  .f-row .f-input { flex: 1; }
+  .form-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+  .cancel-btn {
+    background: none; border: 1px solid #DDD5F0; border-radius: 20px;
+    padding: 7px 20px; font-size: 13px; color: #9B88B0; cursor: pointer; font-family: inherit;
+  }
+  .save-btn {
+    background: #8B7EC8; border: none; border-radius: 20px;
+    padding: 7px 24px; font-size: 13px; color: #fff; cursor: pointer; font-family: inherit;
+  }
+  .flowers { display: flex; gap: 4px; margin: 4px 0; }
+  .flower { font-size: 20px; cursor: pointer; color: #DDD5F0; transition: color 0.15s; user-select: none; }
+  .flower.lit { color: #E8A0BF; }
+  .flower.sm { font-size: 15px; cursor: default; }
+
+  #list { padding: 0 16px; }
+  .empty { text-align: center; color: #B8AEC8; font-size: 14px; margin-top: 48px; line-height: 2; }
+
+  .card {
+    background: #FDFBFF; border: 1px solid #E2D8F0; border-radius: 14px;
+    margin-bottom: 14px; padding: 14px 16px;
+    box-shadow: 0 1px 8px #8B7EC808;
+  }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .card-title { font-size: 16px; color: #2D2438; font-weight: 700; }
+  .card-author { font-size: 12px; color: #9B88B0; margin-top: 2px; }
+  .hero-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .hero-tag { font-size: 12px; color: #7B6B8D; background: #F0EAF8; border-radius: 8px; padding: 2px 9px; }
+  .note-text { font-size: 13px; color: #5A4D6B; line-height: 1.7; white-space: pre-wrap; margin-bottom: 8px; }
+  .note-empty { font-size: 13px; color: #C4AEDD; margin-bottom: 8px; }
+  .card-footer { display: flex; justify-content: space-between; align-items: center; }
+  .date-text { font-size: 11px; color: #B8AEC8; }
+  .del-btn {
+    background: none; border: none; color: #C4AEDD;
+    font-size: 13px; cursor: pointer; padding: 2px 6px; font-family: inherit;
+  }
+</style>
+</head>
+<body>
+
+<div id="lock-screen">
+  <h1>✿ 书单记录本 ✿</h1>
+  <p>请输入密码</p>
+  <input id="lock-input" type="password" maxlength="10" placeholder="••••" />
+  <button id="lock-btn" onclick="unlock()">进入</button>
+  <p id="lock-err"></p>
+</div>
+
+<div id="app">
+  <div class="header">
+    <h1>✿ 书单记录本 ✿</h1>
+    <p>收录那些让你心动的故事</p>
+  </div>
+
+  <button id="add-btn" onclick="toggleForm()">+ 记录新书</button>
+
+  <div id="form-wrap">
+    <label class="f-label">书名 *</label>
+    <input class="f-input" id="f-title" placeholder="书名" />
+    <label class="f-label">作者</label>
+    <input class="f-input" id="f-author" placeholder="作者笔名" />
+    <label class="f-label">主角</label>
+    <div class="f-row">
+      <input class="f-input" id="f-hero1" placeholder="攻 / 主角一" />
+      <input class="f-input" id="f-hero2" placeholder="受 / 主角二" />
+    </div>
+    <label class="f-label">评分</label>
+    <div class="flowers" id="f-flowers">
+      <span class="flower" data-n="1" onclick="setRating(1)">✿</span>
+      <span class="flower" data-n="2" onclick="setRating(2)">✿</span>
+      <span class="flower" data-n="3" onclick="setRating(3)">✿</span>
+      <span class="flower" data-n="4" onclick="setRating(4)">✿</span>
+      <span class="flower" data-n="5" onclick="setRating(5)">✿</span>
+    </div>
+    <label class="f-label">感想 / 备注</label>
+    <textarea class="f-textarea" id="f-note" placeholder="写点什么吧……"></textarea>
+    <div class="form-actions">
+      <button class="cancel-btn" onclick="toggleForm()">取消</button>
+      <button class="save-btn" onclick="addNovel()">收录</button>
+    </div>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<script>
+const PASSWORD = "0628";
+let novels = [];
+let rating = 0;
+
+document.getElementById('lock-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') unlock();
+});
+
+function unlock() {
+  if (document.getElementById('lock-input').value === PASSWORD) {
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadNovels();
+  } else {
+    document.getElementById('lock-err').textContent = '密码不对哦 ✿';
+    document.getElementById('lock-input').value = '';
+  }
+}
+
+function loadNovels() {
+  try { const s = localStorage.getItem('novel-tracker'); if (s) novels = JSON.parse(s); } catch {}
+  renderList();
+}
+function saveNovels() { localStorage.setItem('novel-tracker', JSON.stringify(novels)); }
+
+function setRating(n) {
+  rating = n;
+  document.querySelectorAll('#f-flowers .flower').forEach(el => {
+    el.classList.toggle('lit', parseInt(el.dataset.n) <= n);
+  });
+}
+
+function toggleForm() {
+  const fw = document.getElementById('form-wrap');
+  const open = fw.style.display === 'block';
+  fw.style.display = open ? 'none' : 'block';
+  document.getElementById('add-btn').textContent = open ? '+ 记录新书' : '× 收起';
+  if (!open) {
+    ['f-title','f-author','f-hero1','f-hero2','f-note'].forEach(id => document.getElementById(id).value = '');
+    rating = 0;
+    document.querySelectorAll('#f-flowers .flower').forEach(el => el.classList.remove('lit'));
+  }
+}
+
+function addNovel() {
+  const title = document.getElementById('f-title').value.trim();
+  if (!title) return;
+  novels.unshift({
+    id: Date.now(), title, rating,
+    author: document.getElementById('f-author').value.trim(),
+    hero1: document.getElementById('f-hero1').value.trim(),
+    hero2: document.getElementById('f-hero2').value.trim(),
+    note: document.getElementById('f-note').value.trim(),
+    date: new Date().toLocaleDateString('zh-CN')
+  });
+  saveNovels(); toggleForm(); renderList();
+}
+
+function deleteNovel(id) {
+  novels = novels.filter(n => n.id !== id); saveNovels(); renderList();
+}
+
+function flowerHTML(n) {
+  return '<div class="flowers">' +
+    [1,2,3,4,5].map(i => `<span class="flower sm ${i<=n?'lit':''}">${'✿'}</span>`).join('') +
+    '</div>';
+}
+
+function renderList() {
+  const el = document.getElementById('list');
+  if (!novels.length) { el.innerHTML = '<p class="empty">还没有记录<br>把第一本心动的书存进来吧 ✿</p>'; return; }
+  el.innerHTML = novels.map(n => `
+    <div class="card">
+      <div class="card-top">
+        <div>
+          <div class="card-title">${n.title.replace(/</g,'&lt;')}</div>
+          <div class="card-author">${(n.author||'佚名').replace(/</g,'&lt;')}</div>
+        </div>
+        ${flowerHTML(n.rating)}
+      </div>
+      ${(n.hero1||n.hero2) ? `<div class="hero-row">${n.hero1?`<span class="hero-tag">攻 · ${n.hero1}</span>`:''} ${n.hero2?`<span class="hero-tag">受 · ${n.hero2}</span>`:''}</div>` : ''}
+      ${n.note ? `<p class="note-text">${n.note.replace(/</g,'&lt;')}</p>` : `<p class="note-empty">没有留下感想</p>`}
+      <div class="card-footer">
+        <span class="date-text">收录于 ${n.date}</span>
+        <button class="del-btn" onclick="deleteNovel(${n.id})">删除</button>
+      </div>
+    </div>`).join('');
+}
+</script>
+</body>
+</html>
